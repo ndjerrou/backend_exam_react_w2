@@ -129,15 +129,6 @@ app.post('/api/login', async (req, res) => {
   const userData = req.body;
   // Validate incoming data using Joi schema
   const userValidationSchema = Joi.object({
-    nom: Joi.string().required(),
-    prenom: Joi.string().required(),
-    age: Joi.number().required(),
-    address: Joi.object({
-      ville: Joi.string().required(),
-      postalCode: Joi.string().required(),
-      numeroRue: Joi.string().required(),
-      nomRue: Joi.string().required(),
-    }).required(),
     email: Joi.string().email().required(),
     password: Joi.string().required(),
   });
