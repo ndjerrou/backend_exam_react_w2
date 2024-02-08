@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const Joi = require('joi');
 require('dotenv').config();
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 4000;
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
@@ -47,13 +47,7 @@ const userSchema = new mongoose.Schema({
     nomRue: String,
   },
   email: { type: String, unique: true },
-  password: {
-    type: String,
-    validate: {
-      validator: pwd => pwd.length > 6,
-      message: 'Password length must be > 6 characters',
-    },
-  },
+  password: String,
   isAdmin: Boolean,
 });
 
@@ -108,7 +102,7 @@ app.post('/api/signup', async (req, res) => {
       nomRue: Joi.string().required(),
     }).required(),
     email: Joi.string().email().required(),
-    password: Joi.string().required(),
+    password: Joi.string().required().min(6),
   });
 
   const { error } = userValidationSchema.validate(userData);
@@ -117,10 +111,12 @@ app.post('/api/signup', async (req, res) => {
   }
 
   try {
-    user = await User.create({
+    user = new User({
       ...userData,
       password: await bcrypt.hash(req.body.password, 10),
     });
+
+    await user.save();
     const token = jwt.sign({ id: user._id }, process.env.SECRET_KEY);
 
     res.status(201).json({ token });
