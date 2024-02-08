@@ -8,7 +8,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
 // MongoDB connection setup (replace 'your_mongodb_url' and 'your_mongodb_credentials' with your actual values)
-const mongoURL = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_MDP}@db.tounu.mongodb.net/?retryWrites=true&w=majority`;
+const mongoURL = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_MDP}@db.tounu.mongodb.net/w3aexam`;
 mongoose
   .connect(`${mongoURL}`)
   .then(() => console.log('Connected to MONGODB'))
