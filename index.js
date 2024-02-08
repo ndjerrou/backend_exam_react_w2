@@ -146,7 +146,14 @@ app.post('/api/login', async (req, res) => {
 
   if (!isValid) return res.status(400).send({ ok: false, msg: 'Bad request' });
 
-  const token = jwt.sign({ id: user._id }, process.env.SECRET_KEY);
+  const userAdmin = User.findOne({ email: 'admin@admin.com' });
+
+  let token = null;
+  if (userAdmin) {
+    token = jwt.sign({ id: user._id, isAdmin: true }, process.env.SECRET_KEY);
+  } else {
+    token = jwt.sign({ id: user._id }, process.env.SECRET_KEY);
+  }
 
   res.json({ token });
 });
