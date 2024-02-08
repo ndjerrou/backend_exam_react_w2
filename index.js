@@ -179,6 +179,54 @@ app.post('/api/product', authenticateToken, async (req, res) => {
   }
 });
 
+app.put('/api/product/:productId', async (req, res) => {
+  const productData = req.body;
+
+  // Validate incoming data using Joi schema
+  const { error } = productCreationSchema.validate(productData);
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message });
+  }
+
+  try {
+    const updatedProduct = await Product.findByIdAndUpdate(
+      req.params.productId,
+      productData,
+      { new: true }
+    );
+    res.json(updatedProduct);
+  } catch (error) {
+    res.status(400).json({ error: 'Invalid product data' });
+  }
+});
+
+app.delete('/api/product/:productId', async (req, res) => {
+  try {
+    await Product.findByIdAndDelete(req.params.productId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(404).json({ error: 'Product not found' });
+  }
+});
+
+app.get('/api/product', async (req, res) => {
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/product/:productId', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.productId);
+    res.json(product);
+  } catch (error) {
+    res.status(404).json({ error: 'Product not found' });
+  }
+});
+
 // Other product endpoints (GET, PUT, DELETE)...
 
 // Start the server
