@@ -26,8 +26,9 @@ const authenticateToken = (req, res, next) => {
       .json({ error: 'Access denied. Token not provided.' });
 
   try {
-    const token = jwt.verify(token, process.env.SECRET_KEY);
-    if (token.isAdmin) {
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    console.log(decoded);
+    if (decoded.isAdmin) {
       next();
     }
   } catch (err) {
