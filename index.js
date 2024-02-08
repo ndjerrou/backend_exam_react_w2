@@ -6,6 +6,9 @@ const app = express();
 const port = process.env.PORT || 3000;
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const cors = require('cors');
+
+app.use(cors());
 
 // MongoDB connection setup (replace 'your_mongodb_url' and 'your_mongodb_credentials' with your actual values)
 const mongoURL = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_MDP}@db.tounu.mongodb.net/w3aexam`;
