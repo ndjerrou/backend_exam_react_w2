@@ -4,11 +4,11 @@ const Joi = require('joi');
 require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3000;
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 
 // MongoDB connection setup (replace 'your_mongodb_url' and 'your_mongodb_credentials' with your actual values)
-const mongoURL =
-  'mongodb+srv://ndjerrou:ndjerrou@db.tounu.mongodb.net/?retryWrites=true&w=majority';
+const mongoURL = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_MDP}@db.tounu.mongodb.net/?retryWrites=true&w=majority`;
 mongoose.connect(`${mongoURL}`, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -22,9 +22,14 @@ const authenticateToken = (req, res, next) => {
       .status(401)
       .json({ error: 'Access denied. Token not provided.' });
 
-  // Add your token validation logic here (e.g., verify JWT)
-  // For simplicity, we're assuming any non-empty token is valid in this example
-  next();
+  try {
+    const token = jwt.verify(token, process.env.SECRET_KEY);
+    if (token.isAdmin) {
+      next();
+    }
+  } catch (err) {
+    return res.status(401).send({ ok: false, msg: 'Unauthorized action' });
+  }
 };
 
 // Define user and product schemas
@@ -38,6 +43,15 @@ const userSchema = new mongoose.Schema({
     numeroRue: String,
     nomRue: String,
   },
+  email: { type: String, unique: true },
+  password: {
+    type: String,
+    validate: {
+      validator: pwd => pwd.length > 6,
+      message: 'Password length must be > 6 characters',
+    },
+  },
+  isAdmin: Boolean,
 });
 
 const productSchema = new mongoose.Schema({
@@ -74,6 +88,11 @@ const productCreationSchema = Joi.object({
 app.post('/api/signup', async (req, res) => {
   const userData = req.body;
 
+  let user = await User.findOne({ email: req.body.email });
+
+  if (user)
+    return res.status(400).send({ ok: false, msg: 'User already exists' });
+
   // Validate incoming data using Joi schema
   const userValidationSchema = Joi.object({
     nom: Joi.string().required(),
@@ -85,6 +104,8 @@ app.post('/api/signup', async (req, res) => {
       numeroRue: Joi.string().required(),
       nomRue: Joi.string().required(),
     }).required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().required(),
   });
 
   const { error } = userValidationSchema.validate(userData);
@@ -93,17 +114,50 @@ app.post('/api/signup', async (req, res) => {
   }
 
   try {
-    const newUser = await User.create(userData);
-    res.status(201).json(newUser);
+    user = await User.create({
+      ...userData,
+      password: await bcrypt.hash(req.body.password, 10),
+    });
+    const token = jwt.sign({ id: user._id }, process.env.SECRET_KEY);
+
+    res.status(201).json({ token });
   } catch (error) {
     res.status(400).json({ error: 'Invalid user data' });
   }
 });
 
-app.post('/api/login', (req, res) => {
-  // Placeholder for login logic (replace with actual authentication logic)
-  // For simplicity, we're assuming successful login and returning a token
-  const token = ;
+app.post('/api/login', async (req, res) => {
+  const userData = req.body;
+  // Validate incoming data using Joi schema
+  const userValidationSchema = Joi.object({
+    nom: Joi.string().required(),
+    prenom: Joi.string().required(),
+    age: Joi.number().required(),
+    address: Joi.object({
+      ville: Joi.string().required(),
+      postalCode: Joi.string().required(),
+      numeroRue: Joi.string().required(),
+      nomRue: Joi.string().required(),
+    }).required(),
+    email: Joi.string().email().required(),
+    password: Joi.string().required(),
+  });
+
+  const { error } = userValidationSchema.validate(userData);
+  if (error) {
+    return res.status(400).json({ error: error.details[0].message });
+  }
+  const user = await User.findOne({ email: req.body.email });
+
+  if (!user)
+    return res.status(401).send({ ok: false, msg: 'Resource not found' });
+
+  const isValid = await bcrypt.compare(req.body.password, user.password);
+
+  if (!isValid) return res.status(400).send({ ok: false, msg: 'Bad request' });
+
+  const token = jwt.sign({ id: user._id }, process.env.SECRET_KEY);
+
   res.json({ token });
 });
 
