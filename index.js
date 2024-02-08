@@ -9,10 +9,13 @@ const bcrypt = require('bcrypt');
 
 // MongoDB connection setup (replace 'your_mongodb_url' and 'your_mongodb_credentials' with your actual values)
 const mongoURL = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_MDP}@db.tounu.mongodb.net/?retryWrites=true&w=majority`;
-mongoose.connect(`${mongoURL}`, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose
+  .connect(`${mongoURL}`, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log('Connected to MONGODB'))
+  .catch(err => console.log(err.message));
 
 // Placeholder for token validation (replace with actual authentication logic)
 const authenticateToken = (req, res, next) => {
