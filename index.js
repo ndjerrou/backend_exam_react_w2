@@ -215,6 +215,40 @@ app.get('/api/product', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+app.get('/api/product', async (req, res) => {
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+const decodeToken = (req, res, next) => {
+  const token = req.header('x-auth-token');
+  if (!token)
+    return res
+      .status(401)
+      .json({ error: 'Access denied. Token not provided.' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    console.log(decoded);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).send({ ok: false, msg: 'Unauthorized action' });
+  }
+};
+
+app.get('/api/users/me', decodeToken, async (req, res) => {
+  const user = await User.findById(req.user.id).select('-password');
+
+  res.send({
+    ok: true,
+    data: user,
+  });
+});
 
 app.get('/api/product/:productId', async (req, res) => {
   try {
